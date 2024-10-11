@@ -70,7 +70,7 @@ public class ODM : MonoBehaviour
         playerRb.useGravity = false;
 
         Vector3 direction = (ODMGearPoint.position - player.position).normalized;
-        playerRb.AddForce(direction * ODMGearVelocity * Time.deltaTime);
+        playerRb.AddForce(direction * ODMGearVelocity * Time.deltaTime, ForceMode.Impulseo);
     }
 
     private void StartODMGear()
@@ -119,7 +119,7 @@ public class ODM : MonoBehaviour
         joint.damper = 10;
         joint.massScale = 4.5f;
         joint.tolerance = jointTolerance; 
-        joint.maxDistance = Vector3.Distance(player.position, ODMGearPoint.position); ;
+        joint.maxDistance = Vector3.Distance(player.position, ODMGearPoint.position);
         joint.minDistance = 0;
     }
 

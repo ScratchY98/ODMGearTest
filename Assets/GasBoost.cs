@@ -1,15 +1,15 @@
 using UnityEngine;
-using System.Collections;
 
 [RequireComponent(typeof(Rigidbody))]
 public class GasBoost : MonoBehaviour
 {
-    [SerializeField] private float boostStreight;
-    [SerializeField] private ODM ODMa;
-    [SerializeField] private ODM ODMb;
+    [SerializeField] private float boostStrength;
+    [SerializeField] private ODM ODMleft;
+    [SerializeField] private ODM ODMright;
     [SerializeField] private KeyCode gasBoost;
     [SerializeField] private bool canBoost;
     [SerializeField] private float delay;
+    [SerializeField] private ParticleSystem boostParticle;
     private Rigidbody playerRb;
 
     private void Start()
@@ -19,37 +19,50 @@ public class GasBoost : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (Input.GetKeyDown(gasBoost) && canBoost)
+        if (Input.GetKey(gasBoost))// && canBoost)
             DoGasBoost();
     }
 
     private void DoGasBoost()
     {
         canBoost = false;
-        if (!ODMa.joint && !ODMb.joint)
-            return;
 
-        bool isA = ODMa.joint && !ODMb.joint;
-        bool isB = !ODMa.joint && ODMb.joint;
-        bool isAll = ODMa.joint && ODMb.joint;
-        Vector3 point = Vector3.zero;
+        // Variables pour stocker les positions
+        Vector3 pointA = ODMleft.joint ? ODMleft.ODMGearPoint.position : Vector3.zero;
+        Vector3 pointB = ODMright.joint ? ODMright.ODMGearPoint.position : Vector3.zero;
 
-        if (isA)
-            point = ODMa.ODMGearPoint.position;
-        else if (isB)
-            point = ODMb.ODMGearPoint.position;
-        else if (isAll)
-            point = Vector3.Lerp(ODMa.ODMGearPoint.position, ODMb.ODMGearPoint.position, 0.5f);
+        // Calcul du nombre d'attaches actives
+        int activeCount = (ODMleft.joint ? 1 : 0) + (ODMright.joint ? 1 : 0);
 
-        Vector3 direction = (point - transform.position).normalized;
-        playerRb.AddForce(direction * boostStreight, ForceMode.Impulse);
+        Vector3 boostPoint = Vector3.zero;
 
-        StartCoroutine(Timer());
+        // Utilisation du switch pour déterminer le point de boost
+        switch (activeCount)
+        {
+            case 1:
+                boostPoint = ODMleft.joint ? pointA : pointB;
+                break;
+            case 2:
+                boostPoint = Vector3.Lerp(pointA, pointB, 0.5f);
+                break;
+            default:
+                // Si aucun ODM n'est actif, on annule le boost
+                return;
+        }
+
+        if (boostPoint != Vector3.zero)
+            boostParticle.Play();
+
+        // Appliquer la force de boost en direction du point calculé
+        Vector3 direction = (boostPoint - transform.position).normalized;
+        playerRb.AddForce(direction * boostStrength, ForceMode.Impulse);
+
+        // Lancer le timer pour gérer le délai avant le prochain boost
+        Invoke("Timer", delay);
     }
 
-    private IEnumerator Timer()
+    private void Timer()
     {
-        yield return new WaitForSeconds(delay);
         canBoost = true;
     }
 }
